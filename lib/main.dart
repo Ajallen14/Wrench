@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/bike_provider.dart';
-import 'screens/home_wrapper.dart';
+import 'screens/home_wrapper.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,15 +26,17 @@ class WrenchApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MotoHive',
+      title: 'Wrench',
       themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData.light(useMaterial3: true).copyWith(
         primaryColor: Colors.blueAccent,
       ),
       darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+        scaffoldBackgroundColor: const Color(0xFF121212),
         primaryColor: Colors.blueAccent,
+        cardColor: const Color(0xFF1E1E1E),
       ),
-      home: const HomeWrapper(),
+      home: const HomeWrapper(), 
     );
   }
 }

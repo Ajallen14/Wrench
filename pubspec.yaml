@@ -37,17 +37,19 @@ dependencies:
   animated_notch_bottom_bar: ^1.0.3 
   intl: ^0.19.0
   google_fonts: ^6.1.0
-  flutter_animate: ^4.5.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   hive_generator: ^2.0.1
   build_runner: ^2.4.8
+  flutter_native_splash: ^2.3.10
+  flutter_launcher_icons: ^0.13.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -58,6 +60,19 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+flutter_native_splash: 
+    color: "#000000"
+    image: assets/wrench_foreground.png
+    android_12:
+      image: assets/wrench_foreground.png
+      color: "#000000"
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  image_path: "assets/wrench_foreground.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/wrench_foreground.png"
 
 # The following section is specific to Flutter packages.
 flutter:

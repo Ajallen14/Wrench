@@ -66,7 +66,6 @@ class MaintenanceScreen extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 24, left: 12),
         child: GestureDetector(
           onLongPress: () => _showDeleteDialog(context, session),
-          // custom ResizableFlipCard
           child: ResizableFlipCard(
             front: _buildCard(session, isFront: true),
             back: _buildCard(session, isFront: false, context: context),
@@ -76,7 +75,7 @@ class MaintenanceScreen extends StatelessWidget {
     );
   }
 
-  // Helper method to build the Card UI (Used for both Front and Back)
+  // Helper method to build the Card UI
   Widget _buildCard(MaintenanceSession session, {required bool isFront, BuildContext? context}) {
     return Card(
       elevation: 4,
@@ -116,7 +115,7 @@ class MaintenanceScreen extends StatelessWidget {
                 ],
               )
             : Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.min, // Important for resizing
                 children: [
                   const Text("Service Checklist", style: TextStyle(fontWeight: FontWeight.bold)),
                   const Divider(),
@@ -186,12 +185,11 @@ class MaintenanceScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    // List of added tasks inside the dialog
                     if (tempTasks.isEmpty)
                       const Text("No tasks added yet.", style: TextStyle(color: Colors.grey))
                     else
                       Container(
-                        height: 150, // Limit height inside dialog
+                        height: 150,
                         width: double.maxFinite,
                         child: ListView.builder(
                           shrinkWrap: true,
@@ -230,7 +228,6 @@ class MaintenanceScreen extends StatelessWidget {
                         odometer: int.parse(kmController.text),
                         tasks: tempTasks.map((t) => MaintenanceTask(title: t)).toList(),
                       );
-                      // Save to Hive
                       Provider.of<BikeProvider>(context, listen: false).addSession(newSession);
                       Navigator.pop(context);
                     }
