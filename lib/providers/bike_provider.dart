@@ -5,7 +5,7 @@ import '../models/bike_model.dart';
 class BikeProvider with ChangeNotifier {
   late Box<MaintenanceSession> _serviceBox;
   late Box<FuelEntry> _fuelBox;
-  
+
   bool _isDarkMode = true;
   bool get isDarkMode => _isDarkMode;
 
@@ -25,16 +25,20 @@ class BikeProvider with ChangeNotifier {
   // --- Initialization ---
   Future<void> init() async {
     await Hive.initFlutter();
-    
+
     // Register Adapters
-    Hive.registerAdapter(MaintenanceSessionAdapter());
-    Hive.registerAdapter(MaintenanceTaskAdapter());
-    Hive.registerAdapter(FuelEntryAdapter()); // New
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter(MaintenanceTaskAdapter());
+    }
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(MaintenanceSessionAdapter());
+    }
+    if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(FuelEntryAdapter());
 
     // Open Boxes
     _serviceBox = await Hive.openBox<MaintenanceSession>('maintenance_box');
     _fuelBox = await Hive.openBox<FuelEntry>('fuel_box');
-    
+
     notifyListeners();
   }
 
@@ -56,19 +60,29 @@ class BikeProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> deleteSession(MaintenanceSession session) async {
+    await session.delete();
+    notifyListeners();
+  }
+
   // --- Mileage Logic ---
   Future<void> addFuelEntry(FuelEntry entry) async {
     await _fuelBox.add(entry);
     notifyListeners();
   }
 
-  // Calculate Mileage for a specific entry
+  Future<void> deleteFuelEntry(FuelEntry entry) async {
+    await entry.delete();
+    notifyListeners();
+  }
+
+  // Calculate Mileage (Distance / Fuel)
   String calculateMileage(FuelEntry currentEntry) {
-    // 1. Get all entries sorted by odometer (ascending for calculation)
+    // 1. Get all entries sorted by odometer (ascending)
     var allEntries = _fuelBox.values.toList();
     allEntries.sort((a, b) => a.odometer.compareTo(b.odometer));
 
-    // 2. Find index of current entry
+    // 2. Find index
     int index = allEntries.indexOf(currentEntry);
 
     // 3. If it's the first entry ever, we can't calc mileage
@@ -77,10 +91,10 @@ class BikeProvider with ChangeNotifier {
     // 4. Get previous entry
     FuelEntry previousEntry = allEntries[index - 1];
 
-    // 5. Formula: (Dist / Fuel)
+    // 5. Formula
     int distance = currentEntry.odometer - previousEntry.odometer;
     double mileage = distance / currentEntry.liters;
 
-    return mileage.toStringAsFixed(1); 
+    return mileage.toStringAsFixed(1);
   }
 }

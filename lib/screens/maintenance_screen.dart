@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:timeline_tile/timeline_tile.dart';
-import 'package:flip_card/flip_card.dart';
 import 'package:intl/intl.dart';
 import '../models/bike_model.dart';
 import '../providers/bike_provider.dart';
+import '../widgets/resizable_flip_card.dart'; 
 
 class MaintenanceScreen extends StatelessWidget {
   const MaintenanceScreen({super.key});
@@ -34,25 +34,18 @@ class MaintenanceScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               itemCount: sessions.length,
               itemBuilder: (ctx, index) {
-                // Pass 'true' if it is the last item to stop the timeline line
                 return _buildTimelineItem(
-                  ctx,
-                  sessions[index],
-                  index == sessions.length - 1,
+                  ctx, 
+                  sessions[index], 
+                  index == sessions.length - 1
                 );
               },
             ),
     );
   }
 
-  Widget _buildTimelineItem(
-    BuildContext context,
-    MaintenanceSession session,
-    bool isLast,
-  ) {
-    // Check if all tasks in this session are completed
-    bool allDone =
-        session.tasks.isNotEmpty && session.tasks.every((t) => t.isCompleted);
+  Widget _buildTimelineItem(BuildContext context, MaintenanceSession session, bool isLast) {
+    bool allDone = session.tasks.isNotEmpty && session.tasks.every((t) => t.isCompleted);
 
     return TimelineTile(
       isFirst: false,
@@ -71,22 +64,20 @@ class MaintenanceScreen extends StatelessWidget {
       ),
       endChild: Padding(
         padding: const EdgeInsets.only(bottom: 24, left: 12),
-        child: FlipCard(
-          direction: FlipDirection.HORIZONTAL,
-          // Front side: Summary
-          front: _buildCard(session, isFront: true),
-          // Back side: Checklist
-          back: _buildCard(session, isFront: false, context: context),
+        child: GestureDetector(
+          onLongPress: () => _showDeleteDialog(context, session),
+          // custom ResizableFlipCard
+          child: ResizableFlipCard(
+            front: _buildCard(session, isFront: true),
+            back: _buildCard(session, isFront: false, context: context),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCard(
-    MaintenanceSession session, {
-    required bool isFront,
-    BuildContext? context,
-  }) {
+  // Helper method to build the Card UI (Used for both Front and Back)
+  Widget _buildCard(MaintenanceSession session, {required bool isFront, BuildContext? context}) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -94,6 +85,7 @@ class MaintenanceScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: isFront
             ? Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -101,17 +93,11 @@ class MaintenanceScreen extends StatelessWidget {
                     children: [
                       Text(
                         DateFormat('dd MMM yyyy').format(session.date),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         "${session.odometer} km",
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -119,47 +105,33 @@ class MaintenanceScreen extends StatelessWidget {
                   Text(
                     "${session.tasks.where((t) => t.isCompleted).length} / ${session.tasks.length} Tasks Done",
                     style: TextStyle(
-                      color: session.tasks.every((t) => t.isCompleted)
-                          ? Colors.green
+                      color: (session.tasks.isNotEmpty && session.tasks.every((t) => t.isCompleted)) 
+                          ? Colors.green 
                           : Colors.orange,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 5),
-                  const Text(
-                    "Tap to view details",
-                    style: TextStyle(color: Colors.grey, fontSize: 10),
-                  ),
+                  const Text("Tap to view details • Long press to delete", style: TextStyle(color: Colors.grey, fontSize: 10)),
                 ],
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    "Service Checklist",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  const Text("Service Checklist", style: TextStyle(fontWeight: FontWeight.bold)),
                   const Divider(),
-                  ...session.tasks.map(
-                    (task) => CheckboxListTile(
-                      title: Text(
-                        task.title,
-                        style: TextStyle(
-                          decoration: task.isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
+                  ...session.tasks.map((task) => CheckboxListTile(
+                        title: Text(
+                          task.title,
+                          style: TextStyle(
+                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                          ),
                         ),
-                      ),
-                      value: task.isCompleted,
-                      onChanged: (val) {
-                        // Update Hive database via Provider
-                        Provider.of<BikeProvider>(
-                          context!,
-                          listen: false,
-                        ).toggleTask(session, task);
-                      },
-                    ),
-                  ),
+                        value: task.isCompleted,
+                        onChanged: (val) {
+                          Provider.of<BikeProvider>(context!, listen: false).toggleTask(session, task);
+                        },
+                      )),
                 ],
               ),
       ),
@@ -175,7 +147,6 @@ class MaintenanceScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) {
-        // add/remove tasks 
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
@@ -198,16 +169,11 @@ class MaintenanceScreen extends StatelessWidget {
                         Expanded(
                           child: TextField(
                             controller: taskController,
-                            decoration: const InputDecoration(
-                              labelText: "Add Task (e.g. Oil Change)",
-                            ),
+                            decoration: const InputDecoration(labelText: "Add Task (e.g. Oil Change)"),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(
-                            Icons.add_circle,
-                            color: Colors.blue,
-                          ),
+                          icon: const Icon(Icons.add_circle, color: Colors.blue),
                           onPressed: () {
                             if (taskController.text.isNotEmpty) {
                               setState(() {
@@ -216,19 +182,16 @@ class MaintenanceScreen extends StatelessWidget {
                               });
                             }
                           },
-                        ),
+                        )
                       ],
                     ),
                     const SizedBox(height: 10),
-                    // List of added tasks in the dialog
+                    // List of added tasks inside the dialog
                     if (tempTasks.isEmpty)
-                      const Text(
-                        "No tasks added yet.",
-                        style: TextStyle(color: Colors.grey),
-                      )
+                      const Text("No tasks added yet.", style: TextStyle(color: Colors.grey))
                     else
                       Container(
-                        height: 150,
+                        height: 150, // Limit height inside dialog
                         width: double.maxFinite,
                         child: ListView.builder(
                           shrinkWrap: true,
@@ -237,17 +200,10 @@ class MaintenanceScreen extends StatelessWidget {
                             return ListTile(
                               dense: true,
                               contentPadding: EdgeInsets.zero,
-                              leading: const Icon(
-                                Icons.check_circle_outline,
-                                size: 20,
-                              ),
+                              leading: const Icon(Icons.check_circle_outline, size: 20),
                               title: Text(tempTasks[i]),
                               trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.close,
-                                  size: 16,
-                                  color: Colors.red,
-                                ),
+                                icon: const Icon(Icons.close, size: 16, color: Colors.red),
                                 onPressed: () {
                                   setState(() {
                                     tempTasks.removeAt(i);
@@ -272,25 +228,44 @@ class MaintenanceScreen extends StatelessWidget {
                       final newSession = MaintenanceSession(
                         date: DateTime.now(),
                         odometer: int.parse(kmController.text),
-                        tasks: tempTasks
-                            .map((t) => MaintenanceTask(title: t))
-                            .toList(),
+                        tasks: tempTasks.map((t) => MaintenanceTask(title: t)).toList(),
                       );
                       // Save to Hive
-                      Provider.of<BikeProvider>(
-                        context,
-                        listen: false,
-                      ).addSession(newSession);
+                      Provider.of<BikeProvider>(context, listen: false).addSession(newSession);
                       Navigator.pop(context);
                     }
                   },
                   child: const Text("Save"),
-                ),
+                )
               ],
             );
           },
         );
       },
+    );
+  }
+
+  // --- Logic to Delete a Session ---
+  void _showDeleteDialog(BuildContext context, MaintenanceSession session) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Session"),
+        content: const Text("Are you sure you want to remove this maintenance record?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Provider.of<BikeProvider>(context, listen: false).deleteSession(session);
+              Navigator.pop(ctx);
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }

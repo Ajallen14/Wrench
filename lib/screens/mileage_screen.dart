@@ -14,9 +14,7 @@ class MileageScreen extends StatelessWidget {
 
     return Scaffold(
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(
-          bottom: 90.0,
-        ), 
+        padding: const EdgeInsets.only(bottom: 90.0),
         child: FloatingActionButton(
           backgroundColor: Colors.green,
           onPressed: () => _showAddFuelDialog(context),
@@ -33,36 +31,56 @@ class MileageScreen extends StatelessWidget {
                 final entry = entries[index];
                 final mileage = provider.calculateMileage(entry);
 
-                return ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.speed, color: Colors.green),
+                // Swipe to Delete
+                return Dismissible(
+                  key: ValueKey(entry.key),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    color: Colors.red,
+                    child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                  title: Text("${entry.odometer} km"),
-                  subtitle: Text(DateFormat('dd MMM').format(entry.date)),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        "$mileage km/L",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                  onDismissed: (direction) {
+                    Provider.of<BikeProvider>(
+                      context,
+                      listen: false,
+                    ).deleteFuelEntry(entry);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Fuel entry deleted")),
+                    );
+                  },
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      Text(
-                        "${entry.liters} L",
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
+                      child: const Icon(Icons.speed, color: Colors.green),
+                    ),
+                    title: Text("${entry.odometer} km"),
+                    subtitle: Text(DateFormat('dd MMM').format(entry.date)),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "$mileage km/L",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
-                      ),
-                    ],
+                        Text(
+                          "${entry.liters} L",
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -77,23 +95,36 @@ class MileageScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Add Fuel"),
+        title: const Text("Add Fuel Log"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: odoController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Current Odometer"),
+              decoration: const InputDecoration(
+                labelText: "Current Odometer",
+                prefixIcon: Icon(Icons.speed),
+              ),
             ),
+            const SizedBox(height: 10),
             TextField(
               controller: literController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Liters Filled"),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: "Liters Filled",
+                prefixIcon: Icon(Icons.local_gas_station),
+              ),
             ),
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
           ElevatedButton(
             onPressed: () {
               if (odoController.text.isNotEmpty &&
