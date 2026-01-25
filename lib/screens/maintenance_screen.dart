@@ -36,8 +36,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         ? allSessions
         : allSessions.where((session) {
             // Check if any task title contains the search query (case insensitive)
-            return session.tasks.any((task) =>
-                task.title.toLowerCase().contains(_searchQuery.toLowerCase()));
+            return session.tasks.any(
+              (task) =>
+                  task.title.toLowerCase().contains(_searchQuery.toLowerCase()),
+            );
           }).toList();
 
     return Scaffold(
@@ -81,7 +83,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 20,
+                ),
               ),
             ),
           ),
@@ -94,7 +99,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _searchQuery.isEmpty ? Icons.history : Icons.search_off,
+                          _searchQuery.isEmpty
+                              ? Icons.history
+                              : Icons.search_off,
                           size: 64,
                           color: Colors.grey,
                         ),
@@ -103,7 +110,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                           _searchQuery.isEmpty
                               ? "No Service History"
                               : "No results for \"$_searchQuery\"",
-                          style: const TextStyle(color: Colors.grey, fontSize: 16),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
                         ),
                       ],
                     ),
@@ -125,8 +135,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     );
   }
 
-  Widget _buildTimelineItem(BuildContext context, MaintenanceSession session, bool isLast) {
-    bool allDone = session.tasks.isNotEmpty && session.tasks.every((t) => t.isCompleted);
+  Widget _buildTimelineItem(
+    BuildContext context,
+    MaintenanceSession session,
+    bool isLast,
+  ) {
+    bool allDone =
+        session.tasks.isNotEmpty && session.tasks.every((t) => t.isCompleted);
 
     return TimelineTile(
       isFirst: false,
@@ -156,7 +171,11 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     );
   }
 
-  Widget _buildCard(MaintenanceSession session, {required bool isFront, BuildContext? context}) {
+  Widget _buildCard(
+    MaintenanceSession session, {
+    required bool isFront,
+    BuildContext? context,
+  }) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -172,11 +191,17 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                     children: [
                       Text(
                         DateFormat('dd MMM yyyy').format(session.date),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         "${session.odometer} km",
-                        style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -185,26 +210,32 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   Text(
                     "${session.tasks.where((t) => t.isCompleted).length} / ${session.tasks.length} Tasks Done",
                     style: TextStyle(
-                      color: (session.tasks.isNotEmpty && session.tasks.every((t) => t.isCompleted))
+                      color:
+                          (session.tasks.isNotEmpty &&
+                              session.tasks.every((t) => t.isCompleted))
                           ? Colors.green
                           : Colors.orange,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 5),
-                  const Text("Tap to view details • Long press to delete",
-                      style: TextStyle(color: Colors.grey, fontSize: 10)),
+                  const Text(
+                    "Tap to view details • Long press to delete",
+                    style: TextStyle(color: Colors.grey, fontSize: 10),
+                  ),
                 ],
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("Service Checklist", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Service Checklist",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const Divider(),
-                  ...session.tasks.map((task) => MaintenanceTaskTile(
-                        session: session,
-                        task: task,
-                      )),
+                  ...session.tasks.map(
+                    (task) => MaintenanceTaskTile(session: session, task: task),
+                  ),
                 ],
               ),
       ),
@@ -215,6 +246,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     final kmController = TextEditingController();
     final taskController = TextEditingController();
     List<String> tempTasks = [];
+    DateTime selectedDate = DateTime.now();
 
     showDialog(
       context: context,
@@ -227,6 +259,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // 1. ODOMETER FIELD
                     TextField(
                       controller: kmController,
                       keyboardType: TextInputType.number,
@@ -235,18 +268,60 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                         prefixIcon: Icon(Icons.speed),
                       ),
                     ),
+
                     const SizedBox(height: 15),
+
+                    // 2. DATE PICKER ROW
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_today, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        const Text("Date:", style: TextStyle(fontSize: 16)),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () async {
+                            final DateTime? picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                            );
+                            if (picked != null && picked != selectedDate) {
+                              setState(() {
+                                selectedDate = picked;
+                              });
+                            }
+                          },
+                          child: Text(
+                            DateFormat('dd MMM yyyy').format(selectedDate),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const Divider(),
+                    const SizedBox(height: 10),
+
+                    // 3. TASK INPUT
                     Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: taskController,
-                            decoration:
-                                const InputDecoration(labelText: "Add Task (e.g. Oil Change)"),
+                            decoration: const InputDecoration(
+                              labelText: "Add Task",
+                            ),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.add_circle, color: Colors.blue),
+                          icon: const Icon(
+                            Icons.add_circle,
+                            color: Colors.blue,
+                          ),
                           onPressed: () {
                             if (taskController.text.isNotEmpty) {
                               setState(() {
@@ -255,12 +330,17 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                               });
                             }
                           },
-                        )
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
+
+                    // 4. TASK LIST PREVIEW
                     if (tempTasks.isEmpty)
-                      const Text("No tasks added yet.", style: TextStyle(color: Colors.grey))
+                      const Text(
+                        "No tasks added yet.",
+                        style: TextStyle(color: Colors.grey),
+                      )
                     else
                       Container(
                         height: 150,
@@ -272,10 +352,17 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                             return ListTile(
                               dense: true,
                               contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.check_circle_outline, size: 20),
+                              leading: const Icon(
+                                Icons.check_circle_outline,
+                                size: 20,
+                              ),
                               title: Text(tempTasks[i]),
                               trailing: IconButton(
-                                icon: const Icon(Icons.close, size: 16, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.red,
+                                ),
                                 onPressed: () {
                                   setState(() {
                                     tempTasks.removeAt(i);
@@ -298,16 +385,21 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   onPressed: () {
                     if (kmController.text.isNotEmpty && tempTasks.isNotEmpty) {
                       final newSession = MaintenanceSession(
-                        date: DateTime.now(),
+                        date: selectedDate,
                         odometer: int.parse(kmController.text),
-                        tasks: tempTasks.map((t) => MaintenanceTask(title: t)).toList(),
+                        tasks: tempTasks
+                            .map((t) => MaintenanceTask(title: t))
+                            .toList(),
                       );
-                      Provider.of<BikeProvider>(context, listen: false).addSession(newSession);
+                      Provider.of<BikeProvider>(
+                        context,
+                        listen: false,
+                      ).addSession(newSession);
                       Navigator.pop(context);
                     }
                   },
                   child: const Text("Save"),
-                )
+                ),
               ],
             );
           },
@@ -321,7 +413,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Delete Session"),
-        content: const Text("Are you sure you want to remove this maintenance record?"),
+        content: const Text(
+          "Are you sure you want to remove this maintenance record?",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -329,7 +423,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           ),
           TextButton(
             onPressed: () {
-              Provider.of<BikeProvider>(context, listen: false).deleteSession(session);
+              Provider.of<BikeProvider>(
+                context,
+                listen: false,
+              ).deleteSession(session);
               Navigator.pop(ctx);
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),

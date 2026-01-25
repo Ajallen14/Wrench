@@ -16,10 +16,8 @@ class _HomeWrapperState extends State<HomeWrapper> {
   final _controller = NotchBottomBarController(index: 0);
   final _pageController = PageController(initialPage: 0);
 
-  // Track current index for the AppBar Title
   int _currentIndex = 0;
 
-  // Variable to control the Notch (Background) Color
   Color _notchColor = Colors.blueAccent;
 
   final List<Widget> _screens = [
@@ -55,6 +53,7 @@ class _HomeWrapperState extends State<HomeWrapper> {
     }
 
     return Scaffold(
+      // --- APP BAR ---
       appBar: AppBar(
         title: Text(
           _currentIndex == 0 ? "Service" : "Mileage",
@@ -64,7 +63,6 @@ class _HomeWrapperState extends State<HomeWrapper> {
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         actions: [
-          // --- THEME TOGGLE ---
           IconButton(
             icon: Icon(
               provider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
@@ -77,18 +75,16 @@ class _HomeWrapperState extends State<HomeWrapper> {
         ],
       ),
 
+      // --- BODY WITH SMOOTH TRANSITION ---
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          _controller.jumpTo(index);
-        },
         children: _screens,
       ),
+
       extendBody: true,
+
+      // --- BOTTOM BAR ---
       bottomNavigationBar: AnimatedNotchBottomBar(
         notchBottomBarController: _controller,
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -114,7 +110,14 @@ class _HomeWrapperState extends State<HomeWrapper> {
           ),
         ],
         onTap: (index) {
-          _pageController.jumpToPage(index);
+          // 1. SMOOTH TRANSITION (The Fix)
+          _pageController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+
+          // 2. Update Colors and Title
           setState(() {
             _currentIndex = index;
             if (index == 1) {
