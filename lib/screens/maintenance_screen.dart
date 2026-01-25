@@ -7,13 +7,38 @@ import '../providers/bike_provider.dart';
 import '../widgets/resizable_flip_card.dart';
 import '../widgets/maintenance_task_tile.dart';
 
-class MaintenanceScreen extends StatelessWidget {
+class MaintenanceScreen extends StatefulWidget {
   const MaintenanceScreen({super.key});
+
+  @override
+  State<MaintenanceScreen> createState() => _MaintenanceScreenState();
+}
+
+class _MaintenanceScreenState extends State<MaintenanceScreen> {
+  String _searchQuery = "";
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<BikeProvider>(context);
-    final sessions = provider.sessions;
+    final allSessions = provider.sessions;
+
+    // --- FILTER LOGIC ---
+    // If search is empty, show everything.
+    // If search has text, only show sessions where at least one task matches the text.
+    final filteredSessions = _searchQuery.isEmpty
+        ? allSessions
+        : allSessions.where((session) {
+            // Check if any task title contains the search query (case insensitive)
+            return session.tasks.any((task) =>
+                task.title.toLowerCase().contains(_searchQuery.toLowerCase()));
+          }).toList();
 
     return Scaffold(
       floatingActionButton: Padding(
@@ -24,24 +49,79 @@ class MaintenanceScreen extends StatelessWidget {
           child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
-      body: sessions.isEmpty
-          ? const Center(
-              child: Text(
-                "No Service History",
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: sessions.length,
-              itemBuilder: (ctx, index) {
-                return _buildTimelineItem(
-                  ctx, 
-                  sessions[index], 
-                  index == sessions.length - 1
-                );
+      body: Column(
+        children: [
+          // 1. THE SEARCH BAR
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
               },
+              decoration: InputDecoration(
+                hintText: "Search service history...",
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchQuery = "";
+                            _searchController.clear();
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+              ),
             ),
+          ),
+
+          // 2. THE LIST VIEW
+          Expanded(
+            child: filteredSessions.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _searchQuery.isEmpty ? Icons.history : Icons.search_off,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchQuery.isEmpty
+                              ? "No Service History"
+                              : "No results for \"$_searchQuery\"",
+                          style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredSessions.length,
+                    itemBuilder: (ctx, index) {
+                      return _buildTimelineItem(
+                        ctx,
+                        filteredSessions[index],
+                        index == filteredSessions.length - 1,
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -76,7 +156,6 @@ class MaintenanceScreen extends StatelessWidget {
     );
   }
 
-  // Helper method to build the Card UI
   Widget _buildCard(MaintenanceSession session, {required bool isFront, BuildContext? context}) {
     return Card(
       elevation: 4,
@@ -102,35 +181,36 @@ class MaintenanceScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
+                  // Highlight the search term if needed, but for now simple text
                   Text(
                     "${session.tasks.where((t) => t.isCompleted).length} / ${session.tasks.length} Tasks Done",
                     style: TextStyle(
-                      color: (session.tasks.isNotEmpty && session.tasks.every((t) => t.isCompleted)) 
-                          ? Colors.green 
+                      color: (session.tasks.isNotEmpty && session.tasks.every((t) => t.isCompleted))
+                          ? Colors.green
                           : Colors.orange,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 5),
-                  const Text("Tap to view details • Long press to delete", style: TextStyle(color: Colors.grey, fontSize: 10)),
+                  const Text("Tap to view details • Long press to delete",
+                      style: TextStyle(color: Colors.grey, fontSize: 10)),
                 ],
               )
             : Column(
-                mainAxisSize: MainAxisSize.min, // Important for resizing
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text("Service Checklist", style: TextStyle(fontWeight: FontWeight.bold)),
                   const Divider(),
                   ...session.tasks.map((task) => MaintenanceTaskTile(
-                    session: session,
-                    task: task,
-                  )),
+                        session: session,
+                        task: task,
+                      )),
                 ],
               ),
       ),
     );
   }
 
-  // --- Logic to Add a New Session ---
   void _showAddDialog(BuildContext context) {
     final kmController = TextEditingController();
     final taskController = TextEditingController();
@@ -161,7 +241,8 @@ class MaintenanceScreen extends StatelessWidget {
                         Expanded(
                           child: TextField(
                             controller: taskController,
-                            decoration: const InputDecoration(labelText: "Add Task (e.g. Oil Change)"),
+                            decoration:
+                                const InputDecoration(labelText: "Add Task (e.g. Oil Change)"),
                           ),
                         ),
                         IconButton(
@@ -235,7 +316,6 @@ class MaintenanceScreen extends StatelessWidget {
     );
   }
 
-  // --- Logic to Delete a Session ---
   void _showDeleteDialog(BuildContext context, MaintenanceSession session) {
     showDialog(
       context: context,
