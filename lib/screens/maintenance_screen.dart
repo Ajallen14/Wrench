@@ -4,7 +4,8 @@ import 'package:timeline_tile/timeline_tile.dart';
 import 'package:intl/intl.dart';
 import '../models/bike_model.dart';
 import '../providers/bike_provider.dart';
-import '../widgets/resizable_flip_card.dart'; 
+import '../widgets/resizable_flip_card.dart';
+import '../widgets/maintenance_task_tile.dart';
 
 class MaintenanceScreen extends StatelessWidget {
   const MaintenanceScreen({super.key});
@@ -119,18 +120,10 @@ class MaintenanceScreen extends StatelessWidget {
                 children: [
                   const Text("Service Checklist", style: TextStyle(fontWeight: FontWeight.bold)),
                   const Divider(),
-                  ...session.tasks.map((task) => CheckboxListTile(
-                        title: Text(
-                          task.title,
-                          style: TextStyle(
-                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                          ),
-                        ),
-                        value: task.isCompleted,
-                        onChanged: (val) {
-                          Provider.of<BikeProvider>(context!, listen: false).toggleTask(session, task);
-                        },
-                      )),
+                  ...session.tasks.map((task) => MaintenanceTaskTile(
+                    session: session,
+                    task: task,
+                  )),
                 ],
               ),
       ),
