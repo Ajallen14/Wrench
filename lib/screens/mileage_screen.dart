@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/bike_model.dart';
 import '../providers/bike_provider.dart';
-import '../widgets/mileage_graph_card.dart'; // Import your new widget
+import '../widgets/mileage_graph_card.dart';
+import '../widgets/trip_cost_calculator.dart';
 
 class MileageScreen extends StatelessWidget {
   const MileageScreen({super.key});
@@ -23,26 +24,32 @@ class MileageScreen extends StatelessWidget {
         ),
       ),
       body: entries.isEmpty
-          ? const Center(child: Text("Add your first fuel refill!"))
+          ? const Center(child: Text("Add your first fuel refill to unlock features!"))
           : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
               children: [
-                // 1. USE THE NEW WIDGET HERE
+                // 1. GRAPH
                 if (entries.length > 1) 
                   MileageGraphCard(entries: entries),
 
-                // 2. The List Section
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
-                  child: const Text(
-                    "History",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
-                  ),
+                const SizedBox(height: 16),
+
+                // 2. TRIP COST CALCULATOR
+                TripCostCalculator(entries: entries),
+
+                const SizedBox(height: 24),
+
+                // 3. HISTORY HEADER
+                const Text(
+                  "History",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
                 ),
+                const SizedBox(height: 10),
                 
+                // 4. HISTORY LIST
                 ListView.separated(
                   shrinkWrap: true, 
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: entries.length,
                   separatorBuilder: (ctx, i) => const Divider(),
                   itemBuilder: (ctx, index) {
@@ -50,13 +57,11 @@ class MileageScreen extends StatelessWidget {
                     return _buildFuelTile(context, entry);
                   },
                 ),
-                const SizedBox(height: 100),
               ],
             ),
     );
   }
 
-  // Helper for the List Tile
   Widget _buildFuelTile(BuildContext context, FuelEntry entry) {
     return Dismissible(
       key: ValueKey(entry.key),
