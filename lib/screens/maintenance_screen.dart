@@ -17,6 +17,7 @@ class MaintenanceScreen extends StatefulWidget {
 class _MaintenanceScreenState extends State<MaintenanceScreen> {
   String _searchQuery = "";
   final TextEditingController _searchController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void dispose() {
@@ -30,12 +31,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     final allSessions = provider.sessions;
 
     // --- FILTER LOGIC ---
-    // If search is empty, show everything.
-    // If search has text, only show sessions where at least one task matches the text.
     final filteredSessions = _searchQuery.isEmpty
         ? allSessions
         : allSessions.where((session) {
-            // Check if any task title contains the search query (case insensitive)
             return session.tasks.any(
               (task) =>
                   task.title.toLowerCase().contains(_searchQuery.toLowerCase()),
@@ -119,7 +117,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                     itemCount: filteredSessions.length,
                     itemBuilder: (ctx, index) {
                       return _buildTimelineItem(
@@ -206,7 +204,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  // Highlight the search term if needed, but for now simple text
                   Text(
                     "${session.tasks.where((t) => t.isCompleted).length} / ${session.tasks.length} Tasks Done",
                     style: TextStyle(
@@ -246,7 +243,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     final kmController = TextEditingController();
     final taskController = TextEditingController();
     List<String> tempTasks = [];
-    DateTime selectedDate = DateTime.now();
+
+    _selectedDate = DateTime.now();
 
     showDialog(
       context: context,
@@ -259,7 +257,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 1. ODOMETER FIELD
                     TextField(
                       controller: kmController,
                       keyboardType: TextInputType.number,
@@ -268,10 +265,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                         prefixIcon: Icon(Icons.speed),
                       ),
                     ),
-
                     const SizedBox(height: 15),
 
-                    // 2. DATE PICKER ROW
+                    // --- DATE PICKER ROW ---
                     Row(
                       children: [
                         const Icon(Icons.calendar_today, color: Colors.grey),
@@ -282,18 +278,18 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                           onPressed: () async {
                             final DateTime? picked = await showDatePicker(
                               context: context,
-                              initialDate: selectedDate,
+                              initialDate: _selectedDate,
                               firstDate: DateTime(2020),
                               lastDate: DateTime.now(),
                             );
-                            if (picked != null && picked != selectedDate) {
+                            if (picked != null && picked != _selectedDate) {
                               setState(() {
-                                selectedDate = picked;
+                                _selectedDate = picked;
                               });
                             }
                           },
                           child: Text(
-                            DateFormat('dd MMM yyyy').format(selectedDate),
+                            DateFormat('dd MMM yyyy').format(_selectedDate),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -302,11 +298,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                         ),
                       ],
                     ),
-
                     const Divider(),
                     const SizedBox(height: 10),
 
-                    // 3. TASK INPUT
                     Row(
                       children: [
                         Expanded(
@@ -334,8 +328,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
-
-                    // 4. TASK LIST PREVIEW
                     if (tempTasks.isEmpty)
                       const Text(
                         "No tasks added yet.",
@@ -385,7 +377,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   onPressed: () {
                     if (kmController.text.isNotEmpty && tempTasks.isNotEmpty) {
                       final newSession = MaintenanceSession(
-                        date: selectedDate,
+                        date: _selectedDate,
                         odometer: int.parse(kmController.text),
                         tasks: tempTasks
                             .map((t) => MaintenanceTask(title: t))
